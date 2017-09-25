@@ -56,12 +56,6 @@
             <div class="title">Go to Learn language</div>
             <div class="content">Click to go</div>
           </v-ons-card>
-
-          <v-ons-card>
-            
-            <div class="title">SSL is supported!</div>
-            <div class="content">At the same time,I got a domain of "勉強.ga" If you can't connect to server,try to change server "https://勉強.ga/" or "https://勉強.ga:2783"</div>
-          </v-ons-card>
         </div>
       </v-ons-page>
     </template>
@@ -182,6 +176,7 @@
             <v-ons-list-item @click='svr = "https://勉強.ga"'>https://勉強.ga</v-ons-list-item>
             <v-ons-list-item @click='svr = "https://勉強.ga:2783"'>https://勉強.ga:2783</v-ons-list-item>
             <v-ons-list-item @click='svr = "http://勉強.ga"'>http://勉強.ga</v-ons-list-item>
+            <v-ons-list-item @click='svr = "https://p2plearn.herokuapp.com/"'>https://p2plearn.herokuapp.com/</v-ons-list-item>
           </v-ons-list>
           
           <v-ons-input v-model="svr" placeholder="HOST:PORT"></v-ons-input>
