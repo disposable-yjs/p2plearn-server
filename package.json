@@ -1,0 +1,33 @@
+{
+  "name": "p2plearn-server",
+  "version": "1.0.0",
+  "description": "wip",
+  "main": "index.js",
+  "scripts": {
+    "start": "mkdir db; node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://yuki-js@bitbucket.org/yuki-js/p2plearn-server.git"
+  },
+  "author": "yuki-js",
+  "license": "MIT",
+  "homepage": "https://bitbucket.org/yuki-js/p2plearn-server#readme",
+  "dependencies": {
+    "cryptico": "^1.0.2",
+    "debug": "^3.0.0",
+    "engine.io": "^3.1.0",
+    "engine.io-client": "^3.1.1",
+    "eventemitter3": "^2.0.3",
+    "finalhandler": "^1.0.4",
+    "js-base64": "^2.1.9",
+    "md5": "^2.2.1",
+    "serve-static": "^1.12.4",
+    "websql": "^0.4.4"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "babel-preset-es2015": "^6.24.1",
+    "babelify": "^7.3.0"
+  }
+}

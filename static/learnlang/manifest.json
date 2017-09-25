@@ -1,0 +1,21 @@
+{
+  "name": "言語を学ぶ",
+  "short_name": "言語を学ぶ",
+  "start_url": "./?utm_source=web_app_manifest",
+  "display": "fullscreen",
+  "icons": [{
+    "src": "dist/icons/144.png",
+    "sizes": "144x144",
+    "type": "image/png"
+  },{
+    "src": "dist/icons/180.png",
+    "sizes": "180x180",
+    "type": "image/png"
+  }],
+  "related_applications": [{
+    "platform": "web"
+  }],
+  "background_color": "white",
+  "scope":"/",
+  "theme_color": "#889933"
+}

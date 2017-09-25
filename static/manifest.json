@@ -1,0 +1,21 @@
+{
+  "name": "P2P Learn",
+  "short_name": "P2PLearn",
+  "start_url": "./?utm_source=web_app_manifest",
+  "display": "standalone",
+  "icons": [{
+    "src": "dist/res/icons/144.png",
+    "sizes": "144x144",
+    "type": "image/png"
+  },{
+    "src": "dist/res/icons/180.png",
+    "sizes": "180x180",
+    "type": "image/png"
+  }],
+  "related_applications": [{
+    "platform": "web"
+  }],
+  "background_color": "white",
+  "scope":"/",
+  "theme_color": "#889933"
+}
