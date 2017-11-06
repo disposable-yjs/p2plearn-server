@@ -13,7 +13,7 @@
 
   <body>
     <div id="app"></div>
-
+    <!--Vue単一なんとかファイルをEmacs js2-mode Emmet yasnippet scss-modeを使って書くというわがままをできないから全部テンプレゆるして-->
     <template id="nav">
       <v-ons-navigator :page-stack="pageStack">
         <component :is="page" v-for="page in pageStack" :page-stack="pageStack" @push="pageStack = [...pageStack, $event]"></component>
@@ -123,14 +123,15 @@
           <div>
             <v-ons-list>
               <v-ons-list-item modifier="tappable" v-for="i in result" @click="goToContentDetail(i.id)">
-                <!--<div class="left">
-                    <img class="list-item__thumbnail" :src="i.icon">
-                </div>-->
                 <div class="center">
                   <span class="list-item__title">{{i.name}}</span><span class="list-item__subtitle">{{i.description}}</span>
                 </div>
               </v-ons-list-item>
+              
             </v-ons-list>
+            <p class="hint" v-show="result.length===0">
+              Hint: "#古典" to search 古典 tag
+            </p>
           </div>
           
         </div>
@@ -138,7 +139,12 @@
     </template>
     <template id="collection">
       <v-ons-page data-page="collection">
-        <custom-bar title="Collection"></custom-bar>
+        <custom-bar title="Collection">
+          <v-ons-toolbar-button>
+            <v-ons-icon icon="ion-ios-refresh-empty" @click="getCollection"></v-ons-icon>
+          </v-ons-toolbar-button>
+
+        </custom-bar>
         <div>
           <v-ons-list v-if="items.length!=0&&items[0]">
             <v-ons-list-item modifier="tappable" v-for="i in items" @click="goToContentDetail(i.id)">
@@ -150,7 +156,8 @@
               </div>
             </v-ons-list-item>
           </v-ons-list>
-          <v-ons-progress-bar indeterminate v-else></v-ons-progress-bar>
+          <v-ons-progress-bar indeterminate v-if="items.length==0&&!timedout"></v-ons-progress-bar>
+          <p class="hint" v-if="items.length==0&&timedout">Not found.Please add post here!</p>
         </div>
       </v-ons-page>
     </template>
@@ -167,20 +174,18 @@
       </v-ons-page>
     </template>
     <template id="changeServer">
-      <v-ons-page id="changeServer">
+      <v-ons-page data-page="changeServer">
         <custom-bar title="Change Server"></custom-bar>
         <div>
           Choose or specify the address to the server.
 
           <v-ons-list>
-            <v-ons-list-item @click='svr = "https://勉強.ga"'>https://勉強.ga</v-ons-list-item>
-            <v-ons-list-item @click='svr = "https://勉強.ga:2783"'>https://勉強.ga:2783</v-ons-list-item>
-            <v-ons-list-item @click='svr = "http://勉強.ga"'>http://勉強.ga</v-ons-list-item>
-            <v-ons-list-item @click='svr = "https://p2plearn.herokuapp.com/"'>https://p2plearn.herokuapp.com/</v-ons-list-item>
+            
+            <v-ons-list-item modifier="chevron" @click='svr = "https://p2plearn.herokuapp.com/"'>https://p2plearn.herokuapp.com/</v-ons-list-item>
           </v-ons-list>
           
-          <v-ons-input v-model="svr" placeholder="HOST:PORT"></v-ons-input>
-          <v-ons-button @click="apply">Apply & Reload</v-ons-button>
+          <input v-model="svr" placeholder="type here">
+          <v-ons-button @click="apply" modifier="large">Apply & Reload</v-ons-button>
         </div>
       </v-ons-page>
     </template>
@@ -274,7 +279,7 @@
         </div>
         <div class="center">{{title}}</div>
         <div class="right">
-
+          <slot></slot>
         </div>
       </v-ons-toolbar>
     </template>
@@ -304,10 +309,13 @@
     </template>
     <template id="noteKey">
       <v-ons-page data-page="noteKey">
-        <custom-bar title="Write down this key"></custom-bar>
-        <div>
-          Write down this key.<br>
-          Do not forget or disclose it, or you will not be able to recover your data.<br>
+        <custom-bar title="Write down these words"></custom-bar>
+        <div class="pad">
+          Please write these words on the paper.<br>
+          Do not copy.<br>
+          Do not take a screenshot.<br>
+          Please make sure that your screen is not being watched by others. <br/>
+          If you forget it or tell it to others. you will not be able to recover your data.<br>
           <textarea name="" id="" cols="30" rows="10" disabled="disabled">{{wordsToShow}}</textarea><br>
                <v-ons-button modifier="large" @click="done">Done</v-ons-button>
         </div>
@@ -329,25 +337,23 @@
       <v-ons-page data-page="uploadFile">
         <custom-bar title="Upload File"></custom-bar>
         <div>
-          <v-ons-input placeholder="Name" v-model="uploadData.name"></v-ons-input><br>
-          <v-ons-input placeholder="Tag" v-model="uploadData.tags[0]"></v-ons-input>
-          <v-ons-input placeholder="Tag" v-model="uploadData.tags[1]"></v-ons-input>
-          <v-ons-input placeholder="Tag" v-model="uploadData.tags[2]"></v-ons-input>
-          <v-ons-input placeholder="Tag" v-model="uploadData.tags[3]"></v-ons-input><br>
-          <textarea cols="30" id="" name="" rows="10" v-model="uploadData.description" placeholder="Description"></textarea><br>
-          <textarea cols="30" id="" name="" rows="10" v-model="uploadData.adInfo" placeholder="Ad Script"></textarea><br>
-          <input type="file" ref="file"/><br>
-          <!--File type:<select v-model="fileType">
-            <option value="other">Other</option>
-            <option value="editableJson">Editable JSON</option>
-            <option value="image">JPEG/PNG/GIF</option>
-            <option value="learnLang">Learn Language</option>
-            <option value="zip">ZIP</option>
-          </select><br>
-          <div v-show="fileType=='editableJson'">
-            <input v-model="password" type="password" placeholder="Set password"/>
-          </div>-->
-          <v-ons-button @click="upload">Upload</v-ons-button>
+          
+          <v-ons-list>
+            <v-ons-list-header>Name:</v-ons-list-header>
+            <v-ons-list-item><v-ons-input placeholder="Name" v-model="uploadData.name"></v-ons-input></v-ons-list-item>
+            <v-ons-list-header>Tags</v-ons-list-header>
+            <v-ons-list-item><v-ons-input placeholder="Tag" v-model="uploadData.tags[0]"></v-ons-input></v-ons-list-item>
+            <v-ons-list-item><v-ons-input placeholder="Tag" v-model="uploadData.tags[1]"></v-ons-input></v-ons-list-item>
+            <v-ons-list-item><v-ons-input placeholder="Tag" v-model="uploadData.tags[2]"></v-ons-input></v-ons-list-item>
+            <v-ons-list-item><v-ons-input placeholder="Tag" v-model="uploadData.tags[3]"></v-ons-input></v-ons-list-item>
+            <v-ons-list-header>Description</v-ons-list-header>
+            <v-ons-list-item><textarea v-model="uploadData.description" placeholder="Description"></textarea></v-ons-list-item>
+            <v-ons-list-header>Adscript</v-ons-list-header>
+            <v-ons-list-item><textarea v-model="uploadData.adInfo" placeholder="Ad Script"></textarea></v-ons-list-item>
+             <v-ons-list-header>Select File</v-ons-list-header>
+            <v-ons-list-item><input type="file" ref="file"/><br></v-ons-list-item>
+          </v-ons-list>
+          <v-ons-button @click="upload" modifier="large" :disabled="uploading">Upload</v-ons-button>
         </div>
       </v-ons-page>
     </template>

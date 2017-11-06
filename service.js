@@ -332,4 +332,5 @@ exports.sendAllPeer=(verb,data,excludeIdList=[])=>{//接続している全てに
     }
     myConnectionList[cc].sendMessage(verb,data)
   }
+  
 }
