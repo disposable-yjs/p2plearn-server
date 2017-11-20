@@ -1,6 +1,7 @@
 const cryptico = require("cryptico")
 const ServerPeer=require("./peer").ServerPeer
 const service = require("./service")
+const database=require("./database")
 const debug = require("debug")("index:debug")
 const info = require("debug")("index:info")
 const IS_NODE=typeof process === 'object' && process + '' === '[object process]';

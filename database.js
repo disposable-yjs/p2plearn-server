@@ -1,7 +1,10 @@
 const openDatabase = require('websql');//ブラウザとNode.jsでコードを共有するために、廃止された技術、WebSQLを使用せざるを得なかった。
 let db;
 const debug=require("debug")("database:debug")
-const md5=require("md5")
+const crypto = require('crypto');
+const md5 = function (string) {
+	return crypto.createHash('md5').update(string, 'utf8').digest('hex');
+}
 
 let dbPath ="db/default.db";
 
@@ -79,19 +82,18 @@ exports.saveUploadedFile=(file,id,userId)=>new Promise((resolve,reject)=>{
     ]
   ])
 })
-
-exports.search=(searchCond)=>new Promise((resolve,reject)=>{//命令をエスケープしていないのは危険であるが、プレースホルダではうまくいかなかったので仕方がない
+const escapeLike = (stmt)=>stmt.replace(/'/g,"''").replace(/%/g,"\\$%").replace(/_/g,"\\$_");
+exports.search=(searchCond)=>new Promise((resolve,reject)=>{
   let stmt="SELECT id,userId,name,description FROM contentInfo WHERE ";
   searchCond.tags.forEach(v=>{
-    stmt+='tags LIKE "%'+v+'%" OR '
+    stmt+="tags LIKE '%"+escapeLike(v)+"%' OR "
   })
   searchCond.userId.forEach(v=>{
-    stmt+='userId = "'+v+'" OR '
+    stmt+="userId = '"+escapeLike(v)+"' OR "
   })
   searchCond.keyword.forEach(v=>{
-    stmt+='name LIKE "%'+v+'%" OR description LIKE "%'+v+'%" OR '
+    stmt+="name LIKE '%"+escapeLike(v)+"%' OR description LIKE '%"+v+"%' OR "
   })
-  //SQL Injectionごめんね
   stmt=stmt.slice(0,-3)
   debug("Statement:",stmt)
   exports.sql(stmt,[],(tx,res)=>{
