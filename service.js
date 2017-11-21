@@ -211,7 +211,7 @@ exports.receiveHandler=(verb,data,peer,sig)=>{//P2PmanagerなどUI層から送�
         debug("this message is not signed so this packet was disposed")
         return
       }
-      database.updateUserProfile(peer.id,data.screenName,data.profile)
+      database.updateUserProfile(peer.id,data.screenName,data.profile,data.minerKey)
       break
       
     }

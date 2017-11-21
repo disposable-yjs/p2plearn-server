@@ -52,7 +52,7 @@ class P2PManager{
     service.sendAllPeer("uploadFile",{
       description:data.description,
       tags:data.tags,
-      adInfo:data.adInfo,
+      requireMining:data.requireMining,
       body:data.body,
       name:data.name
     })
@@ -124,10 +124,11 @@ class P2PManager{
       
     })
   }
-  updateUserProfile(screenName,profile){
+  updateUserProfile(screenName,profile,minerKey){
+    debug(minerKey)
     return new Promise((resolve,reject)=>{
       service.sendAllPeer("updateUserProfile",{
-        screenName,profile
+        screenName,profile,minerKey
       })
       resolve()
     })

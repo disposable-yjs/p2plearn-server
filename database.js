@@ -36,12 +36,12 @@ exports.init=(dbp)=>{
   db=openDatabase(dbp,"1.0","DB","")
   exports.sqls([
     ["CREATE TABLE IF NOT EXISTS contents(id TEXT PRIMARY KEY UNIQUE NOT NULL, contentBody TEXT NOT NULL, dataSize INTEGER NOT NULL);"],
-    ["CREATE TABLE IF NOT EXISTS user(id TEXT PRIMARY KEY UNIQUE NOT NULL, screenName TEXT NOT NULL default 'Anonymous', profile TEXT);"],
+    ["CREATE TABLE IF NOT EXISTS user(id TEXT PRIMARY KEY UNIQUE NOT NULL, screenName TEXT NOT NULL default 'Anonymous', profile TEXT default '', minerKey TEXT default '');"],
     [`CREATE TABLE IF NOT EXISTS contentInfo(
  id TEXT PRIMARY KEY UNIQUE NOT NULL,
  description TEXT default 'No description',
  userId TEXT NOT NULL,
- adInfo TEXT default '(function(){})()',
+ requireMining BOOLEAN default false,
  other TEXT default '{}',
  downloadable BOOLEAN NOT NULL default true,
  cacheAllowed BOOLEAN NOT NULL default true,
@@ -69,16 +69,10 @@ exports.calcHash=(body)=>{
 }
 
 exports.saveUploadedFile=(file,id,userId)=>new Promise((resolve,reject)=>{
-  debug([
-    ["INSERT INTO contents VALUES (?,?,?)",[id,file.body,file.body.length]],
-    ["INSERT INTO contentInfo VALUES (?,?,?,?,'{}',TRUE,TRUE,7,?,'application/x-octet-stream',?,?)",
-     [id,file.description,userId,file.adInfo,file.name,file.tags,file.body.length]
-    ]
-  ])
   exports.sqls([
     ["INSERT INTO contents VALUES (?,?,?)",[id,file.body,file.body.length]],
     ["INSERT INTO contentInfo VALUES (?,?,?,?,'{}',1,1,7,?,'application/x-octet-stream',?,?)",
-     [id,file.description,userId,file.adInfo,file.name,file.tags,file.body.length]
+     [id,file.description,userId,file.requireMining,file.name,file.tags,file.body.length]
     ]
   ])
 })
@@ -105,7 +99,7 @@ exports.search=(searchCond)=>new Promise((resolve,reject)=>{
   },reject)
 })
 exports.contentInfo=(id)=>new Promise((resolve,reject)=>{
-  sql("SELECT contentInfo.id, description,userId,adInfo,other,downloadable,cacheAllowed,preferDevice,name,dataType,tags,dataSize,screenName FROM contentInfo left join user on contentInfo.userId = user.id where contentInfo.id=?",[id],(tx,res)=>{
+  sql("SELECT contentInfo.id, description,userId,requireMining,other,downloadable,cacheAllowed,preferDevice,name,dataType,tags,dataSize,screenName,minerKey FROM contentInfo left join user on contentInfo.userId = user.id where contentInfo.id=?",[id],(tx,res)=>{
     if(res.rows.length){
       resolve(res.rows.item(0))
     }else{
@@ -122,12 +116,9 @@ exports.contentBody=(id)=>new Promise((resolve,reject)=>{
     }
   },reject)
 })
-exports.updateUserProfile=(id,screenName,profile)=>new Promise((resolve,reject)=>{
-  wsql("REPLACE INTO user VALUES (?,?,?)",[id,screenName,profile],(tx,res)=>{
-    if(res.rows.length){
-      resolve()
-    }else{reject()}
-  },reject)
+exports.updateUserProfile=(id,screenName,profile,minerKey)=>new Promise((resolve,reject)=>{
+  debug(id)
+  wsql("REPLACE INTO user VALUES (?,?,?,?)",[id,screenName,profile,minerKey],(tx,res)=>resolve,reject)
 })
 exports.getUserProfile=(id)=>new Promise((resolve,reject)=>{
   sql("SELECT * FROM user WHERE id=?",[id],(tx,res)=>{
