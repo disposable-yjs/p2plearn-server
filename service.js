@@ -66,7 +66,7 @@ exports.newConnection=(peer,whoami=true)=>{//自分の公開鍵、ほかのノ�
     
   })
 }
-exports.receiveHandler=(verb,data,peer,sig)=>{//P2PmanagerなどUI層から送られたデータはこのハンドラ側から見えず、データに対する返答がココで受信されるので、それはちゃんとUI層に受け渡そう。UIに渡すには、index.jsでイベントを定義して、ここからイベント送信
+exports.receiveHandler=(verb,data,peer,encrypted)=>{//P2PmanagerなどUI層から送られたデータはこのハンドラ側から見えず、データに対する返答がココで受信されるので、それはちゃんとUI層に受け渡そう。UIに渡すには、index.jsでイベントを定義して、ここからイベント送信.encrypted==trueならば受信したピアとは安全に通信できている。
   debug("received",verb,data)//,peer)
   switch(verb){//パケットの動詞で条件分岐
     case "whoAmI":{//自分の公開鍵、ほかのノードの接続情報を返答する。
@@ -154,7 +154,7 @@ exports.receiveHandler=(verb,data,peer,sig)=>{//P2PmanagerなどUI層から送�
       break
     }
     case "uploadFile":{
-      if(sig!="verified"){//本人確認
+      if(encrypted){//本人確認
         debug("this message is not signed so this packet was disposed")
         return
       }
@@ -207,7 +207,7 @@ exports.receiveHandler=(verb,data,peer,sig)=>{//P2PmanagerなどUI層から送�
     }
       break
     case "updateUserProfile":{
-      if(sig!="verified"){//本人確認
+      if(encrypted){//本人確認
         debug("this message is not signed so this packet was disposed")
         return
       }
@@ -258,8 +258,8 @@ exports.receiveHandler=(verb,data,peer,sig)=>{//P2PmanagerなどUI層から送�
       break
     case "addToCollection":
       
-      if(sig!="verified"){//本人確認
-        debug("this message is "+sig+" so this packet was disposed")
+      if(encrypted){//本人確認
+        debug("this message is not encrypted so this packet was disposed")
         return
       }
       database.addToCollection(peer.id,data.dataId).then(()=>{

@@ -1,9 +1,9 @@
-const cryptico = require("cryptico")
 const ServerPeer=require("./peer").ServerPeer
 const service = require("./service")
 const database=require("./database")
 const debug = require("debug")("index:debug")
 const info = require("debug")("index:info")
+const crypt=require("./crypt.js")
 const IS_NODE=typeof process === 'object' && process + '' === '[object process]';
 
 class P2PManager{
@@ -11,15 +11,14 @@ class P2PManager{
     this._myId;
   }
   setRSAKey(key){
-    if(key instanceof cryptico.RSAKey){
-      this.key=key
+    //key must be hex or Buffer
+    
+    if(typeof(key)==="string"){
+      this.key=crypt.hex2buf(key)
     }else{
-      this.key=cryptico.RSAKey.parse(key)
+      this.key=key;
     }
-    this._myId=cryptico.publicKeyString(this.key)
-  }
-  static generateRSAKeyFromSeed(seed){
-    return cryptico.generateRSAKey(seed,P2PManager.RSA_BITS)
+    this._myId=crypt.getPubKeyB64(key)
   }
   beginService(address){
     let peer=null;
@@ -187,10 +186,12 @@ if(IS_NODE){
   const config = require(process.argv[2]||"./config.node")
   const manager=new P2PManager()
   
-  if(config.rsaJson){
-    manager.setRSAKey(config.rsaJson)
+  if(config.keyHex){
+    manager.setKey(config.keyHex)
   }else if(config.seed){
-    manager.setRSAKey(P2PManager.generateRSAKeyFromSeed(config.seed))
+    manager.setKey(crypt.hash(config.seed).slice(0,32))
+  }else if(config.rawKey){
+    manager.setKey(config.rawKey)
   }
   manager.beginService(config.defaultServer)
 }
@@ -200,3 +201,13 @@ if(!IS_NODE){
   window.alert=console.log.bind(console)
 }
 //#endif
+
+
+
+
+
+
+
+
+
+

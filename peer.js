@@ -4,8 +4,8 @@
 */
 const io=require("engine.io-client")
 const debug=require("debug")("peer:debug");
-const cryptico = require("cryptico")
-const Base64 = require('js-base64').Base64;
+const crypt = require("./crypt")
+const service=require("./service")
 
 exports.Peer= class {
   constructor(){
@@ -52,20 +52,19 @@ exports.Peer= class {
   }
   callReceived(msg){//復号して、onReceivedに設定したハンドラーにデータ渡す
     let d=null//データ
-    const r=cryptico.decrypt(msg,service.manager.key)//復号されたメッセージ
-    if(r.status==="success"&&r.publicKeyString===this.id){
-      d=JSON.parse(Base64.decode(r.plaintext))
-      
-    }else{
-      debug("decrypt error!!!!Falling",r)
+    crypt.decrypt(msg,service.manager.key).then(plain=>{//復号されたメッセージバッファ
+      d=JSON.parse(plain.toString("utf8"))
+      this.cb(d[0],d[1],this,true);
+    }).catch(err=>{//改ざんor平文モード
       try{
-        d=JSON.parse(Base64.decode(msg))//鍵を交換する前など、暗号化されていない場合の処理。
+        d=JSON.parse(msg)
+        this.cb(d[0],d[1],this,false);
       }catch(e){
-        debug("Base64 result",Base64.decode(msg))
-        debug("Failed to parse JSON or decode Base64.")
+        debug("Failed to parse JSON.")
+        this.cb(null,null,this,false);
       }
-    }
-    this.cb(d[0],d[1],this,r.signature);
+    })
+    
   }
 }
 exports.ClientPeer= class extends exports.Peer {
@@ -79,16 +78,12 @@ exports.ClientPeer= class extends exports.Peer {
   }
   sendMessage(verb,msg){
     debug("cli send",[verb,msg],"to",this._id);
-    const jsn=Base64.encode(JSON.stringify([verb,msg]))//Base64されたJson
-    const r=cryptico.encrypt(jsn,this._id,service.manager.key)//暗号化
-    if(r.status==="success"){
-      
-      this.socket.send(r.cipher);
-    }else{
-      debug("Encrypt Error!!!Falling")//鍵を交換する前など、暗号化されていない場合の処理。
-      this.socket.send(jsn)
-    }
-
+    const sendingBuf=Buffer.from(JSON.stringify([verb,msg]))
+    crypt.encrypt(sendingBuf,this._id,service.manager.key).then(cipher=>{//暗号化
+      this.socket.send(cipher);
+    }).catch(err=>{
+      this.socket.send(sendingBuf)
+    })
   }
   
   disconnect(){
@@ -121,15 +116,12 @@ exports.ServerPeer= class extends exports.Peer{
   }
   sendMessage(verb,msg){
     debug("svr send",[verb,msg],"to",this._id);
-    const jsn=Base64.encode(JSON.stringify([verb,msg]))
-    const r=cryptico.encrypt(jsn,this._id,service.manager.key)
-    if(r.status==="success"){
-    
-      this.socket.send(r.cipher);
-    }else{
-      debug("Encrypt Error!!!Falling")
-      this.socket.send(jsn)//鍵を交換する前など、暗号化されていない場合の処理。
-    }
+    const sendingBuf=Buffer.from(JSON.stringify([verb,msg]))
+    crypt.encrypt(sendingBuf,this._id,service.manager.key).then(cipher=>{//暗号化
+      this.socket.send(cipher);
+    }).catch(err=>{
+      this.socket.send(sendingBuf)
+    })
   }
 }
-const service=require("./service")
+
