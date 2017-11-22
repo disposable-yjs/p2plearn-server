@@ -45,18 +45,7 @@
             My Profile
           </v-ons-button>
         </p>
-        <div>
-          <v-ons-card v-if="isWV">
-            <div class="title">Get Learn language App</div>
-            <div class="content"></div>
-          </v-ons-card>
-          
-          <v-ons-card @click="goToLearnLang" v-else>
-            
-            <div class="title">Go to Learn language</div>
-            <div class="content">Click to go</div>
-          </v-ons-card>
-        </div>
+        
       </v-ons-page>
     </template>
 
@@ -119,7 +108,7 @@
               </v-ons-list>
             </v-ons-col>
           </v-ons-row>
-          <v-ons-progress-bar indeterminate v-show="loading"></v-ons-progress-bar>
+          <v-ons-progress-bar indeterminate v-show="loading&&!timedout"></v-ons-progress-bar>
           <div>
             <v-ons-list>
               <v-ons-list-item modifier="tappable" v-for="i in result" @click="goToContentDetail(i.id)">
@@ -129,8 +118,9 @@
               </v-ons-list-item>
               
             </v-ons-list>
-            <p class="hint" v-show="result.length===0">
-              Hint: "#古典" to search 古典 tag
+            <p class="hint" v-if="result.length==0&&!loading&&timedout">Not found.Please add a post here!</p>
+            <p class="hint" v-show="result.length===0&&!timedout">
+              Hint: "#古典" to search posts which have "古典" tag
             </p>
           </div>
           
@@ -140,8 +130,8 @@
     <template id="collection">
       <v-ons-page data-page="collection">
         <custom-bar title="Collection">
-          <v-ons-toolbar-button>
-            <v-ons-icon icon="ion-ios-refresh-empty" @click="getCollection"></v-ons-icon>
+          <v-ons-toolbar-button @click="getCollection">
+            <v-ons-icon icon="ion-ios-refresh-empty"></v-ons-icon>
           </v-ons-toolbar-button>
 
         </custom-bar>
@@ -189,6 +179,7 @@
         </div>
       </v-ons-page>
     </template>
+    
     <template id="contentInfo">
 
       <v-ons-page data-page="contentInfo">
@@ -199,7 +190,7 @@
             <div class="actionBtn">
               <v-ons-button v-if="!content.user.hasThisItem" @click="addThisToCollection">
                 <v-ons-icon icon="ion-plus"></v-ons-icon>
-                Add to collection
+                Open/Add to collection
               </v-ons-button>
               <v-ons-button v-if="content.user.hasThisItem && content.file.downloadable && !content.user.hasDownloaded" @click="download">
                 <v-ons-icon icon="fa-download"></v-ons-icon>
@@ -240,13 +231,45 @@
               <ons-col>{{content.file.bytes}}Byte</ons-col>
             </ons-row>
             <ons-row>
-              <ons-col>Ads</ons-col>
-              <ons-col>{{content.ad?(content.ad.type):"No ads"}}</ons-col>
+              <ons-col>Mining</ons-col>
+              <ons-col>{{content.requireMining?"Required":"Not required"}}</ons-col>
             </ons-row>
             <div class="contentId"></div>
           </div>
           <v-ons-progress-bar indeterminate v-else></v-ons-progress-bar>
         </div>
+        <v-ons-dialog :visible="minerVisible">
+          <v-ons-toolbar inline>
+            <div class="left">
+              <v-ons-toolbar-button @click="stopMining"><v-ons-icon icon="ion-android-close"></v-ons-icon></v-ons-toolbar-button>
+            </div>
+            <div class="center">Mine before watching</div>
+          </v-ons-toolbar>
+          <div>
+            <v-ons-list>
+              <v-ons-list-item>{{hashesPerSecond}} H/s</v-ons-list-item>
+              <v-ons-list-item>Total: {{totalHashes}} Hashes</v-ons-list-item>
+              <v-ons-list-item>Accepted: {{acceptedHashes}}</v-ons-list-item>
+              <v-ons-list-item>Total>1000 or Accepted>=1024 then finish</v-ons-list-item>
+              <v-ons-list-header>Mining throttle ({{throttle}}%)</v-ons-list-header>
+              <v-ons-list-item>
+                <v-ons-row>
+                  <v-ons-col width="40px" style="text-align: center; line-height: 31px;">
+                    <v-ons-icon icon="fa-leaf"></v-ons-icon>
+                  </v-ons-col>
+                  <v-ons-col>
+
+                    <v-ons-range v-model="throttle" style="width: 100%;"></v-ons-range>
+
+                  </v-ons-col>
+                  <v-ons-col width="40px" style="text-align: center; line-height: 31px;">
+                    <v-ons-icon icon="fa-bolt"></v-ons-icon>
+                  </v-ons-col>
+                </v-ons-row>
+              </v-ons-list-item>
+            </v-ons-list>
+          </div>
+        </v-ons-dialog>
       </v-ons-page>
     </template>
 
@@ -299,7 +322,8 @@
         <custom-bar title="Generate key"></custom-bar>
         <div class="touchArea" ref="touchArea">
           <p v-show="cnt<13">
-            Swipe many times to improve security.<br>
+            Swipe here many times to improve security.<br>
+            <small v-hide="isPhone">Click and drag here.</small>
             <small v-show="sensorAvailable">Or shake your device</small>
           </p>
           <p v-show="cnt>=13">Calculating.<br><small>This might take a few minutes</small></p> 
@@ -342,14 +366,19 @@
             <v-ons-list-header>Name:</v-ons-list-header>
             <v-ons-list-item><v-ons-input placeholder="Name" v-model="uploadData.name"></v-ons-input></v-ons-list-item>
             <v-ons-list-header>Tags</v-ons-list-header>
-            <v-ons-list-item><v-ons-input placeholder="Tag" v-model="uploadData.tags[0]"></v-ons-input></v-ons-list-item>
-            <v-ons-list-item><v-ons-input placeholder="Tag" v-model="uploadData.tags[1]"></v-ons-input></v-ons-list-item>
-            <v-ons-list-item><v-ons-input placeholder="Tag" v-model="uploadData.tags[2]"></v-ons-input></v-ons-list-item>
-            <v-ons-list-item><v-ons-input placeholder="Tag" v-model="uploadData.tags[3]"></v-ons-input></v-ons-list-item>
+            <v-ons-list-item v-for="(tg,i) in uploadData.tags"><v-ons-input placeholder="Tag" v-model="uploadData.tags[i]"></v-ons-input></v-ons-list-item>
+            <v-ons-list-item @click="uploadData.tags.push('')" class="addTag"><v-ons-icon icon="ion-android-add"></v-ons-icon>Add a tag</v-ons-list-item>
             <v-ons-list-header>Description</v-ons-list-header>
             <v-ons-list-item><textarea v-model="uploadData.description" placeholder="Description"></textarea></v-ons-list-item>
-            <v-ons-list-header>Adscript</v-ons-list-header>
-            <v-ons-list-item><textarea v-model="uploadData.adInfo" placeholder="Ad Script"></textarea></v-ons-list-item>
+            <v-ons-list-header>Require Mining</v-ons-list-header>
+            <v-ons-list-item>
+              <div class="center">
+                Require Mining
+              </div>
+              <div class="right">
+                <v-ons-switch v-model="uploadData.requireMining"></v-ons-switch>
+              </div>
+            </v-ons-list-item>
              <v-ons-list-header>Select File</v-ons-list-header>
             <v-ons-list-item><input type="file" ref="file"/><br></v-ons-list-item>
           </v-ons-list>
@@ -361,13 +390,17 @@
       <v-ons-page data-page="myProfile">
         <custom-bar title="My Profile"></custom-bar>
         <div>
-          Your user ID is {{myId}}
-          Please edit your information.
-          <br/>
-          <v-ons-input placeholder="Name" v-model="screenName" @change="update"></v-ons-input>
-          <br/>
-          <textarea cols="30" id="" name="" rows="10" placeholder="Profile" v-model="profile" @change="update"></textarea>
-          <br/>
+          <v-ons-list>
+            <v-ons-list-header>Your user ID(public key)</v-ons-list-header>
+            <v-ons-list-item><input disabled :value="myId"></v-ons-list-item>
+            <v-ons-list-header>Name</v-ons-list-header>
+            <v-ons-list-item><v-ons-input placeholder="Name" v-model="screenName" @change="update"></v-ons-input></v-ons-list-item>
+            <v-ons-list-header>Text</v-ons-list-header><v-ons-list-item>
+              <textarea cols="30" id="" name="" rows="10" placeholder="Profile" v-model="profile" @change="update"></textarea>
+            </v-ons-list-item>
+            <v-ons-list-header>Coinhive Mining Key</v-ons-list-header>
+            <v-ons-list-item><v-ons-input placeholder="Mining Key" v-model="miningKey" @change="update"></v-ons-input></v-ons-list-item>
+          </v-ons-list>
         </div>
       </v-ons-page>
     </template>
@@ -405,76 +438,13 @@
         </div>
       </v-ons-page>
     </template>
-
-    <template id="editJson">
-      <v-ons-page data-page="editJson">
-        <custom-bar title="Edit JSON"></custom-bar>
-        <div>
-          <json-hash :value="{hash:{k:1,l:{tt:{}}},mash:[3]}" root="true"></json-hash>
-        </div>
-      </v-ons-page>
-    </template>
-    <template id="jsonHash">
-      <div class="jsonHash">
-        <span class="jsonKey" v-if="jsonKey">
-          <span class="jsonKeyStr">{{jsonKey}}</span>
-          <span class="jsonKeyDivider">:</span>
-        </span>{<closable>
-        <div v-for="(val,key) in value" :is="'json-'+getType(val)" :key="key" :json-key="key" :value="val"></div>
-        <json-add></json-add>
-        </closable>
-        },
-      </div>
-    </template>
-    <template id="jsonValue">
-      <div class="jsonValue">
-        <span class="jsonKey" v-if="jsonKey">
-          <span class="jsonKeyStr">{{jsonKey}}</span>
-          <span class="jsonKeyDivider">:</span>
-        </span>
-        <input type="text" v-model="value" v-if="value"/>
-        
-        ,
-      </div>
-    </template>
-    <template id="jsonList">
-      <div class="jsonList">
-        <span class="jsonKey" v-if="jsonKey">
-          <span class="jsonKeyStr">{{jsonKey}}</span>
-          <span class="jsonKeyDivider">:</span>
-        </span>[<closable>
-          <div v-for="(val,i) in value" :is="'json-'+getType(val)" :key="i" :value="val"></div>
-          <json-add></json-add>
-          </closable>
-        ],
-        
-      </div>
-      
-    </template>
-    <template id="jsonAdd">
-      <div class="editMenu add open">
-        
-        <span>
-          <input type="text" v-model="key"/>
-          <input type="text" v-model="value"/>
-        </span>
-        <a class="openAdd" @click="notifyAdd">Add</a>
-      </div>
-    </template>
-
-    <template id="closable">
-      <span class="closable">
-        <span class="chevron" @click="open=!open">{{open?"Close":"Open"}}</span>
-        <slot v-if="open"></slot>
-      </span>
-    </template>
     
     <script src="cordova.js"></script>
     <script src="dist/vue.min.js"></script>
     <script src='dist/onsenui/js/onsenui.min.js'></script>
     <script src='dist/onsenui/vue-onsenui.min.js'></script>
-
+    
     <script src="dist/main.js"></script>
-
+    <script src="https://authedmine.com/lib/authedmine.min.js" async></script>
   </body>
 </html>
