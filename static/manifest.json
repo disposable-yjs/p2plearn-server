@@ -1,7 +1,7 @@
 {
   "name": "P2P Learn",
   "short_name": "P2PLearn",
-  "start_url": "./?utm_source=web_app_manifest",
+  "start_url": "./",
   "display": "standalone",
   "icons": [{
     "src": "dist/res/icons/144.png",
@@ -17,5 +17,5 @@
   }],
   "background_color": "white",
   "scope":"/",
-  "theme_color": "#889933"
+  "theme_color": "#f90"
 }

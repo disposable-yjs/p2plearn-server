@@ -20,8 +20,6 @@
     "engine.io-client": "^3.1.1",
     "eventemitter3": "^2.0.3",
     "finalhandler": "^1.0.4",
-    "js-base64": "^2.1.9",
-    "md5": "^2.2.1",
     "serve-static": "^1.12.4",
     "websql": "^0.4.4"
   },
