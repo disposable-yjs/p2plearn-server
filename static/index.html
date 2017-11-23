@@ -53,7 +53,7 @@
       <v-ons-page data-page="tutorial">
         <v-ons-carousel fullscreen swipeable auto-scroll overscrollable :index.sync="carIndex">
           <tutorial-item image="dist/res/tutorial/1.png" bg-color="#810893" text-color="white">このアプリは、皆さんの勉強をお互いに助け合うことを目的としたアプリです。</tutorial-item>
-          <tutorial-item image="dist/res/tutorial/2.png" bg-color="#114514" text-color="white">投稿された勉強に役立つコンテンツを探して、広告を見たあと、学習できます。</tutorial-item>
+          <tutorial-item image="dist/res/tutorial/2.png" bg-color="#114514" text-color="white">投稿された勉強に役立つコンテンツを探して学習できます。投稿者の設定により、暗号通貨のマイニングをすることもあります。</tutorial-item>
           <tutorial-item image="dist/res/tutorial/3.png" bg-color="#fffc7f" text-color="black">このアプリ自身が秘密鍵を生成します。これは今までのパスワードに相当するものですが、外部にいかなる形でも送信されません。この鍵で、ユーザ確認と、コンピュータの識別と、データの暗号化を同時に行います。</tutorial-item>
           <tutorial-item image="dist/res/tutorial/5.png" bg-color="#b50018" text-color="white">秘密鍵の保存に、13個の英単語でできたパスフレーズを利用します。従来の機種変更コードに当たるものです。これを紛失、盗難してしまった場合、あなたの全てのデータも紛失、盗難します。</tutorial-item>
           <tutorial-item image="dist/res/tutorial/4.png" bg-color="#b50018" text-color="white">
@@ -147,7 +147,7 @@
             </v-ons-list-item>
           </v-ons-list>
           <v-ons-progress-bar indeterminate v-if="items.length==0&&!timedout"></v-ons-progress-bar>
-          <p class="hint" v-if="items.length==0&&timedout">Not found.Please add post here!</p>
+          <p class="hint" v-show="items.length==0&&timedout">Not found.Please add post here!</p>
         </div>
       </v-ons-page>
     </template>
@@ -160,7 +160,16 @@
           <v-ons-list-item modifier="chevron tappable" @click="regenKey">Regenerate Key</v-ons-list-item>
           <v-ons-list-item modifier="chevron tappable" @click="changeServer">change server</v-ons-list-item>
           <v-ons-list-item modifier="chevron tappable" @click="goToConnectionChart">Connections</v-ons-list-item>
+          <v-ons-list-item modifier="chevron tappable" @click="eraseDialog=true">Erase the database</v-ons-list-item>
         </v-ons-list>
+        <v-ons-alert-dialog
+          title="Erase the database"
+          :footer="{
+                   Cancel: () => eraseDialog=false,
+                   Ok: eraseDatabase
+                   }"
+          :visible.sync="eraseDialog"
+          >Do you really erase the database?</v-ons-alert-dialog>
       </v-ons-page>
     </template>
     <template id="changeServer">
@@ -438,6 +447,7 @@
         </div>
       </v-ons-page>
     </template>
+    
     
     <script src="cordova.js"></script>
     <script src="dist/vue.min.js"></script>
