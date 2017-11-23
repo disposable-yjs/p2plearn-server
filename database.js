@@ -54,6 +54,10 @@ exports.init=(dbp)=>{
   ])
 };
 exports.init(dbPath)
+
+exports.deleteTables = ()=>new Promise((resolve,reject)=>exports.sqls([["DROP TABLE contents"],["DROP TABLE user"],["DROP TABLE contentInfo"],["DROP TABLE collection",[],resolve,reject]]))
+
+
 exports.dataExists=dataId=>{
   return new Promise((resolve,reject)=>{
     sql("SELECT id from contents where id = ?;",[dataId],(tx,result)=>{
@@ -61,14 +65,8 @@ exports.dataExists=dataId=>{
     })
   })
 }
-exports.calcHash=(body)=>{
-
-  return new Promise((resolve,reject)=>{
-    resolve(md5(body));
-  })
-}
-
 exports.saveUploadedFile=(file,id,userId)=>new Promise((resolve,reject)=>{
+  debug([id,file.description,userId,file.requireMining,file.name,file.tags,file.body.length])
   exports.sqls([
     ["INSERT INTO contents VALUES (?,?,?)",[id,file.body,file.body.length]],
     ["INSERT INTO contentInfo VALUES (?,?,?,?,'{}',1,1,7,?,'application/x-octet-stream',?,?)",

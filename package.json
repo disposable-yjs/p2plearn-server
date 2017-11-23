@@ -14,7 +14,6 @@
   "license": "MIT",
   "homepage": "https://bitbucket.org/yuki-js/p2plearn-server#readme",
   "dependencies": {
-    "cryptico": "^1.0.2",
     "debug": "^3.0.0",
     "eccrypto": "^1.0.3",
     "engine.io": "^3.1.0",

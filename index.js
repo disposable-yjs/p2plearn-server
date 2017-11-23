@@ -10,15 +10,16 @@ class P2PManager{
   constructor(){
     this._myId;
   }
-  setRSAKey(key){
+  setKey(key){
     //key must be hex or Buffer
     
     if(typeof(key)==="string"){
-      this.key=crypt.hex2buf(key)
+      this.key=Buffer.from(key,"base64")
     }else{
       this.key=key;
     }
-    this._myId=crypt.getPubKeyB64(key)
+    this._myId=crypt.getPubKey(this.key)
+    this._myIdB64=this._myId.toString("base64")
   }
   beginService(address){
     let peer=null;
@@ -31,7 +32,7 @@ class P2PManager{
   seekData(dataId){
     return new Promise((resolve,reject)=>{
       let timeout=false
-      service.sendAllPeer("seekData",{maxHop:15,idList:[this.myId],dataId})
+      service.sendAllPeer("seekData",{maxHop:15,idList:[this.myIdB64],dataId})
       service.event.once("dataFound",(d)=>{
         if(timeout)return;
         resolve(d)
@@ -47,14 +48,41 @@ class P2PManager{
   get myId(){
     return this._myId
   }
+  get myIdB64(){
+    return this._myIdB64
+  }
   uploadFile(data){
-    service.sendAllPeer("uploadFile",{
+    const metadata = {
       description:data.description,
       tags:data.tags,
       requireMining:data.requireMining,
-      body:data.body,
       name:data.name
+    };
+    const dataHash=crypt.hash(data.body).slice(0,16)
+    const metaHash=crypt.hash(JSON.stringify(metadata)).slice(0,16)
+    return crypt.sign(this.key,Buffer.concat([dataHash,metaHash])).then(signature=>{
+
+      service.sendAllPeer("uploadFile",{
+        signature:signature.toString("base64"),
+        metadata,
+        userId:this.myIdB64,
+        body:data.body
+      })
+      return true
     })
+  }
+  updateUserProfile(screenName,profile,minerKey){
+      const data={
+        screenName,profile,minerKey
+      }
+      const dataHash=crypt.hash(JSON.stringify(data)).slice(0,32)
+      
+    return crypt.sign(this.key,dataHash).then(signature=>{
+      service.sendAllPeer("updateUserProfile",{
+        screenName,profile,minerKey,signature:signature.toString("base64"),userId:this.myIdB64
+      })
+    })
+
   }
   static createSearchCond(searchString){
     searchString=searchString.replace(/　/g," ")
@@ -89,7 +117,7 @@ class P2PManager{
     }
     return new Promise((resolve,reject)=>{
       let timeout=false
-      service.sendAllPeer("search",{maxHop:15,idList:[this.myId],searchCond})
+      service.sendAllPeer("search",{maxHop:15,idList:[this.myIdB64],searchCond})
       service.event.once("searchResult",(d)=>{
         if(timeout)return;
         resolve(d)
@@ -102,6 +130,7 @@ class P2PManager{
       },15000)
     }) 
   }
+  
   sendChannelMessage(idList,data){
     service.myConnectionList[idList[1]].sendMessage("channelMessage",{idList,data})
     
@@ -123,19 +152,11 @@ class P2PManager{
       
     })
   }
-  updateUserProfile(screenName,profile,minerKey){
-    debug(minerKey)
-    return new Promise((resolve,reject)=>{
-      service.sendAllPeer("updateUserProfile",{
-        screenName,profile,minerKey
-      })
-      resolve()
-    })
-  }
+  
   seekUser(id){
     return new Promise((resolve,reject)=>{
       let timeout=false
-      service.sendAllPeer("seekUser",{maxHop:15,idList:[this.myId],id})
+      service.sendAllPeer("seekUser",{maxHop:15,idList:[this.myIdB64],id})
       service.event.once("userFound",(d)=>{
         if(timeout)return;
         resolve(d)
@@ -160,7 +181,7 @@ class P2PManager{
   getCollection(){
     return new Promise((resolve,reject)=>{
       let timeout=false
-      service.sendAllPeer("requestCollection",{maxHop:15,idList:[this.myId]})
+      service.sendAllPeer("requestCollection",{maxHop:15,idList:[this.myIdB64]})
       service.event.once("responseCollection",(d)=>{
         if(timeout)return;
         resolve(d.result)
@@ -176,8 +197,18 @@ class P2PManager{
   getConnections(){
     return this.sendReceiveChannelMessage([],{verb:"requestConnections"})
   }
+  initDatabase(){
+    database.init();
+  }
+  eraseDatabase(){
+    return database.deleteTables()
+  }
+
+  static generateKeyFromSeed(seed){
+    const privateKey=crypt.hash(seed).slice(0,32)
+    return {private:privateKey,public:crypt.getPubKey(privateKey)}
+  }
 }
-P2PManager.RSA_BITS=512;
 module.exports=P2PManager
 
 //#if isNode 
@@ -190,7 +221,7 @@ if(IS_NODE){
   if(config.keyHex){
     manager.setKey(config.keyHex)
   }else if(config.seed){
-    manager.setKey(crypt.hash(config.seed).slice(0,32))
+    manager.setKey(P2PManager.generateKeyFromSeed(config.seed).private)
   }else if(config.rawKey){
     manager.setKey(config.rawKey)
   }
@@ -202,13 +233,3 @@ if(!IS_NODE){
   window.alert=console.log.bind(console)
 }
 //#endif
-
-
-
-
-
-
-
-
-
-

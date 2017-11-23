@@ -3,6 +3,8 @@ module.exports={
   //Peer address to which this server first connects
   seed:((Math.random()*999999999999999)|0)+"",
   //Seed string to make a key and ID.Make it long and random
+  //rawKey:Buffer.allocUnsafe(32),
+  //keyBase64:"Base64=="
   listenPort:process.env.PORT||"33400",
   //Port number
   dbPath:"db/1.db",

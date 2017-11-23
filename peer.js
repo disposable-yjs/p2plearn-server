@@ -18,6 +18,8 @@ exports.Peer= class {
     this.address=""
     this.registered=false
     this._connecting=false
+    this.commonKey=null
+    this.isKeyPublic=false
   }
   set connecting(flag=false){
     if(!flag){
@@ -28,7 +30,6 @@ exports.Peer= class {
   onDisconnect(cb){
     this.disconnectCB=cb
   }
-  sendMessage(verb,msg){}
   receiveMessage(cb){}
   disconnect(){
     this._id="";
@@ -43,29 +44,90 @@ exports.Peer= class {
   get id(){
     return this._id;
   }
+  get idB64(){
+    return this._idB64;
+  }
   set id(v){
-    this._id=v
+    this._id=Buffer.from(v,"base64")
+    this._idB64=v
   }
   //idと_idが混在しているコードがあったので、両方維持
   onReceived(cb){
     this.cb=cb
   }
-  callReceived(msg){//復号して、onReceivedに設定したハンドラーにデータ渡す
-    let d=null//データ
-    crypt.decrypt(msg,service.manager.key).then(plain=>{//復号されたメッセージバッファ
-      d=JSON.parse(plain.toString("utf8"))
-      this.cb(d[0],d[1],this,true);
-    }).catch(err=>{//改ざんor平文モード
-      try{
+  callReceived(rawMsg){//復号して、onReceivedに設定したハンドラーにデータ渡す。msgはString
+    debug("Received:",rawMsg,this.id,this.commonKey)
+    
+    if(typeof rawMsg!=="string"){
+      throw new TypeError("Message is not a string.")
+    }
+    
+    let message={}
+    let d=null //データ
+
+    if(rawMsg[1]!=="@"){
+      debug("this is not a correct message")
+      return
+    }
+    const msg=rawMsg.slice(2)
+    switch(rawMsg[0]|0){
+      case crypt.mode.COMMON:
+        //共通鍵モード
+        debug("decrypting in common")
+        crypt.decryptCommon(Buffer.from(msg,"base64"),this.commonKey).then(plain=>{
+          debug("Plain text in receive common:",plain.toString())
+          d=JSON.parse(plain.toString())
+          this.cb(d[0],d[1],this,crypt.mode.COMMON);
+        })
+        break
+      case crypt.mode.PUBLIC:
+        //公開鍵モード
+        debug("decrypting in pub")
+        const cipherData = JSON.parse(msg)
+        crypt.decryptPub({
+          iv:Buffer.from(cipherData.iv,"base64"),
+          ephemPublicKey:Buffer.from(cipherData.ephemPublicKey,"base64"),
+          ciphertext:Buffer.from(cipherData.ciphertext,"base64"),
+          mac:Buffer.from(cipherData.mac,"base64")
+        },service.manager.key).then(plain=>{
+          debug("Plain text in recv pub:",plain.toString())
+          d=JSON.parse(plain.toString())
+          this.cb(d[0],d[1],this,crypt.mode.PUBLIC);
+        })
+        break;
+      case crypt.mode.PLAIN:
+        //平文モード
         d=JSON.parse(msg)
-        this.cb(d[0],d[1],this,false);
-      }catch(e){
-        debug("Failed to parse JSON.")
-        this.cb(null,null,this,false);
-      }
-    })
+        this.cb(d[0],d[1],this,crypt.mode.PLAIN);
+        break
+    }
     
   }
+
+  sendMessage(verb,msg){
+    debug("Sending:",[verb,msg])
+    const sendingBuf=JSON.stringify([verb,msg])
+    if(this.commonKey){
+      debug("encrypting in common")
+      crypt.encryptCommon(Buffer.from(sendingBuf),this.commonKey).then(cipher=>{
+        debug("Cipher:",cipher.toString("base64"))
+        this.socket.send(crypt.mode.COMMON+"@"+cipher.toString("base64"))
+      })
+    }else if(this.id){
+      debug("encrypting in Pub")
+      crypt.encryptPub(Buffer.from(sendingBuf),this.id).then(cipher=>{
+        this.socket.send(crypt.mode.PUBLIC+"@"+JSON.stringify({
+          iv:cipher.iv.toString("base64"),
+          ephemPublicKey:cipher.ephemPublicKey.toString("base64"),
+          ciphertext:cipher.ciphertext.toString("base64"),
+          mac:cipher.mac.toString("base64")
+        }));
+      })
+    }else{
+      this.socket.send(crypt.mode.PLAIN+"@"+sendingBuf)
+    }
+  }
+  
 }
 exports.ClientPeer= class extends exports.Peer {
   constructor(sock){
@@ -74,15 +136,6 @@ exports.ClientPeer= class extends exports.Peer {
     this.connecting=true
     this.socket.on("close",()=>{
       this.connecting=false;
-    })
-  }
-  sendMessage(verb,msg){
-    debug("cli send",[verb,msg],"to",this._id);
-    const sendingBuf=Buffer.from(JSON.stringify([verb,msg]))
-    crypt.encrypt(sendingBuf,this._id,service.manager.key).then(cipher=>{//暗号化
-      this.socket.send(cipher);
-    }).catch(err=>{
-      this.socket.send(sendingBuf)
     })
   }
   
@@ -112,15 +165,6 @@ exports.ServerPeer= class extends exports.Peer{
     })
     this.socket.on("close",()=>{
       this.connecting=false;
-    })
-  }
-  sendMessage(verb,msg){
-    debug("svr send",[verb,msg],"to",this._id);
-    const sendingBuf=Buffer.from(JSON.stringify([verb,msg]))
-    crypt.encrypt(sendingBuf,this._id,service.manager.key).then(cipher=>{//暗号化
-      this.socket.send(cipher);
-    }).catch(err=>{
-      this.socket.send(sendingBuf)
     })
   }
 }
