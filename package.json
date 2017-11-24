@@ -1,18 +1,19 @@
 {
   "name": "p2plearn-server",
   "version": "1.0.0",
-  "description": "wip",
+  "description": "A P2P network/application for students.",
   "main": "index.js",
   "scripts": {
-    "start": "mkdir db; node index.js"
+    "start": "node index.js",
+    "install": "mkdir db"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://yuki-js@bitbucket.org/yuki-js/p2plearn-server.git"
+    "url": "git+https://github.com/yuki-js/p2plearn-server.git"
   },
   "author": "yuki-js",
   "license": "MIT",
-  "homepage": "https://bitbucket.org/yuki-js/p2plearn-server#readme",
+  "homepage": "https://github.com/yuki-js/p2plearn-server",
   "dependencies": {
     "debug": "^3.0.0",
     "eccrypto": "^1.0.3",
