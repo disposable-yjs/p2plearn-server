@@ -1,7 +1,7 @@
 module.exports={
   defaultServer:"",
   //Peer address to which this server first connects
-  seed:((Math.random()*999999999999999)|0)+"",
+  seed:"hs;oijkfdgusohd;h;sbdhojcbsdfs",
   //Seed string to make a key and ID.Make it long and random
   //rawKey:Buffer.allocUnsafe(32),
   //keyBase64:"Base64=="
@@ -9,7 +9,7 @@ module.exports={
   //Port number
   dbPath:"db/1.db",
   //SQLite DB Path
-  myHostname:"https://p2plearn.herokuapp.com",
+  myHostname:"http://p2plearn-p2plearn.a3c1.starter-us-west-1.openshiftapps.com",
   //this server's hostname or public IPx.If your IP is dynamic IP , it is highly recommended that you use dynamic DNS service.
   ssl:false/*{
     key:"/etc/letsencrypt/live/xn--4gr220a.ga/privkey.pem",
