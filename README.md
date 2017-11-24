@@ -3,9 +3,9 @@
 P2P Learn is a P2P network/application for students.
 
 Feature:
-* Decentralized
+* Distributed
 * Secure
-* Runnable in browser
+* Runnable even on browser
 
 ## Running a full node
 1. Clone this repository
@@ -15,9 +15,9 @@ Feature:
     * Make sure that `seed` is changed from initial value.
 1. `$ mkdir db`
 1. `$ npm start`
-    * If you set `port` less than 1024,run as a superuser.
+    * If you set `port` less than 1024,you must run as a superuser.
 
-## Running in browser
+## Running on browser
 
 https://github.com/yuki-js/p2plearn-web
 

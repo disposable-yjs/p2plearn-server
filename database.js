@@ -2,9 +2,6 @@ const openDatabase = require('websql');//ブラウザとNode.jsでコードを�
 let db;
 const debug=require("debug")("database:debug")
 const crypto = require('crypto');
-const md5 = function (string) {
-	return crypto.createHash('md5').update(string, 'utf8').digest('hex');
-}
 
 let dbPath ="db/default.db";
 

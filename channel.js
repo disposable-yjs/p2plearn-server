@@ -27,16 +27,6 @@ module.exports.receiver=(receivedData,remoteId)=>new Promise((resolve,reject)=>{
       resolve({verb:"responseConnections",result:connections})
       break
     }
-    case "chatHandshake":{
-      
-      
-      break
-    }
-    case "chat":{
-      
-      
-      break
-    }
   }
 })
 /*
@@ -45,10 +35,3 @@ module.exports.receiver=(receivedData,remoteId)=>new Promise((resolve,reject)=>{
   それならばそのメッセイジにきちんとしたフォーマットは不可欠。
   それをここで定義する。
 */
-
-
-
-
-
-
-
